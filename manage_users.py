@@ -6,11 +6,20 @@ import bcrypt
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
+def get_user_by_login(login):
+    session = get_session()
+    try:
+        user = session.query(User).filter_by(login=login).one()
+        return user
+    except NoResultFound:
+        print(f"Пользователь с логином '{login}' не найден.")
+    finally:
+        session.close()
+
 def add_user(login, password, role_name, age, subordinates=None):
     """Добавление нового пользователя в бд"""
     session = get_session()
     try:
-        # Проверяем, существует ли челик с таким же логином
         if session.query(User).filter_by(login=login).first():
             print(f"Пользователь с логином '{login}' уже существует.")
             session.close()
@@ -67,6 +76,22 @@ def add_function(name, access_level, role_name):
         print(f"Роль '{role_name}' не найдена.")
     finally:
         session.close()
+
+def list_roles():
+    """Вывод списка всех ролей"""
+    session = get_session()
+    roles = session.query(Role).all()
+    session.close()
+    return roles
+
+def get_role_by_number(number):
+    """Получение роли по номеру"""
+    roles = list_roles()
+    if 1 <= number <= len(roles):
+        return roles[number - 1]
+    else:
+        print(f"Неправильный номер роли: {number}")
+        return None
 
 def list_subordinates(user_id):
     """Вывод списка подчиненных для пользователя"""
@@ -144,4 +169,6 @@ def change_subordinates(user_id, new_subordinates_logins):
         print(f"Пользователь или подчиненные не найдены.")
     finally:
         session.close()
+
+
 
